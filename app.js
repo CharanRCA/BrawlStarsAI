@@ -169,33 +169,36 @@ function makeBrawlerPortrait(playerOrName, size, isStarPlayer) {
   </div>`;
 }
 
-// ── AI via g4f.dev (OpenAI-compatible, free) ─────────────────────────────────
-const AI_ENDPOINT = 'https://api.g4f.dev/v1/chat/completions';
-const AI_MODELS = [
-  'gpt-4o-mini',
-  'gpt-4o',
-  'claude-3-haiku',
-  'llama-3.3-70b',
+// ── AI (multiple free endpoints, tries each until one works) ─────────────────
+const AI_PROVIDERS = [
+  { url: 'https://api.g4f.dev/v1/chat/completions',             model: 'gpt-4o-mini' },
+  { url: 'https://api.g4f.dev/v1/chat/completions',             model: 'gpt-4o' },
+  { url: 'https://api.g4f.dev/v1/chat/completions',             model: 'llama-3.3-70b' },
+  { url: 'https://api.g4f.dev/v1/chat/completions',             model: 'claude-3-5-haiku' },
+  { url: 'https://chatapi.akash.network/api/v1/chat/completions', model: 'Meta-Llama-3-3-70B-Instruct' },
+  { url: 'https://api.openai-hk.com/v1/chat/completions',       model: 'gpt-3.5-turbo' },
 ];
 
 async function sendAI(messages) {
-  for (const model of AI_MODELS) {
+  const errors = [];
+  for (const { url, model } of AI_PROVIDERS) {
     try {
-      const res = await fetch(AI_ENDPOINT, {
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ model, messages, stream: false }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(25000),
       });
-      if (!res.ok) continue;
+      if (!res.ok) { errors.push(model + ':' + res.status); continue; }
       const data = await res.json();
-      const content = data.choices?.[0]?.message?.content;
+      const content = data.choices?.[0]?.message?.content?.trim();
       if (content) return content;
+      errors.push(model + ':empty');
     } catch (e) {
-      // try next model
+      errors.push(model + ':' + e.message);
     }
   }
-  throw new Error('All AI models failed');
+  throw new Error('AI unavailable. Tried: ' + errors.join(', '));
 }
 
 // ── Battlelog fetch ──────────────────────────────────────────────────────────

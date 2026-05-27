@@ -201,11 +201,11 @@
 .brawler-pick-tile:hover { border-color: rgba(79,142,247,.35); background: rgba(79,142,247,.06); transform: scale(1.04); }
 .brawler-pick-tile.in-my    { border-color: rgba(79,142,247,.5); background: rgba(79,142,247,.1); }
 .brawler-pick-tile.in-enemy { border-color: rgba(248,113,113,.5); background: rgba(248,113,113,.1); }
-.brawler-pick-tile img { width: 46px; height: 46px; border-radius: 10px; object-fit: cover; display: block; }
+.brawler-pick-tile img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; display: block; }
 .brawler-pick-name { font-size: 9px; font-weight: 700; color: rgba(255,255,255,.55); text-align: center; max-width: 64px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
 .slot {
-  width: 72px; height: 72px; border-radius: 14px;
+  width: 84px; height: 84px; border-radius: 14px;
   border: 2px dashed rgba(255,255,255,.12);
   display: flex; align-items: center; justify-content: center;
   position: relative; cursor: default;
@@ -213,7 +213,7 @@
   transition: all .2s;
 }
 .slot.filled { border-style: solid; border-color: rgba(255,255,255,.15); }
-.slot img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
+.slot img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; display: block; }
 .slot-remove {
   position: absolute; top: -6px; right: -6px;
   width: 18px; height: 18px; border-radius: 50%;
@@ -490,8 +490,8 @@ function renderBrawlerGrid() {
     tile.innerHTML = `
       ${badge}
       ${img ? `<img src="${img}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-               <div style="display:none;width:46px;height:46px;border-radius:10px;background:${color}25;color:${color};font-weight:900;font-size:1rem;align-items:center;justify-content:center;">${getBrawlerInitials(name)}</div>`
-           : `<div style="width:46px;height:46px;border-radius:10px;background:${color}25;color:${color};font-weight:900;font-size:1rem;display:flex;align-items:center;justify-content:center;">${getBrawlerInitials(name)}</div>`}
+               <div style="display:none;width:52px;height:52px;border-radius:10px;background:${color}25;color:${color};font-weight:900;font-size:1.1rem;align-items:center;justify-content:center;">${getBrawlerInitials(name)}</div>`
+           : `<div style="width:52px;height:52px;border-radius:10px;background:${color}25;color:${color};font-weight:900;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">${getBrawlerInitials(name)}</div>`}
       <div class="brawler-pick-name">${name}</div>`;
     grid.appendChild(tile);
   });
@@ -530,11 +530,11 @@ document.getElementById('manualAnalyzeBtn').addEventListener('click', async () =
         <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
           <div style="flex:1;min-width:180px;">
             <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;color:rgba(79,142,247,.7);margin-bottom:8px;">🔵 MY TEAM</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">${my.map(n => makeBrawlerPortrait(n, 60, false)).join('')}</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">${my.map(n => makeBrawlerPortrait(n, 80, false)).join('')}</div>
           </div>
           <div style="flex:1;min-width:180px;">
             <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;color:rgba(248,113,113,.7);margin-bottom:8px;">🔴 ENEMY TEAM</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">${enemy.map(n => makeBrawlerPortrait(n, 60, false)).join('')}</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">${enemy.map(n => makeBrawlerPortrait(n, 80, false)).join('')}</div>
           </div>
         </div>
         <div class="win-bar-wrap" style="margin-bottom:14px;">
@@ -550,7 +550,10 @@ document.getElementById('manualAnalyzeBtn').addEventListener('click', async () =
     setTimeout(() => resultEl.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%'), 50);
   } catch(e) {
     resultEl.style.display = 'block';
-    resultEl.innerHTML = `<div class="error-box">⚠️ Analysis failed. Try again.</div>`;
+    resultEl.innerHTML = `<div class="error-box" style="flex-direction:column;gap:6px;">
+      <div>⚠️ Analysis failed: ${e.message}</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.4);">The AI service may be temporarily unavailable. Wait a few seconds and try again.</div>
+    </div>`;
   } finally {
     btn.disabled = false;
     btn.innerHTML = '⚡ Analyze Draft';
