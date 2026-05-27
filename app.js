@@ -202,54 +202,78 @@ async function sendAI(messages) {
 }
 
 // ── Battlelog fetch ──────────────────────────────────────────────────────────
+// Default token — replace via the 🔑 UI to override
+const DEFAULT_BS_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6ImYyOWM4YTMxLWVjNjctNDA1MS1hNzhhLWUyMGE3N2U2ZmFkOSIsImlhdCI6MTc3OTkwOTUxMSwic3ViIjoiZGV2ZWxvcGVyL2VhZDU5ZjQ5LWUzNTAtYmE5OC1kY2U2LTllOWI5ZDM0ZGQ5MSIsInNjb3BlcyI6WyJicmF3bHN0YXJzIl0sImxpbWl0cyI6W3sidGllciI6ImRldmVsb3Blci9zaWx2ZXIiLCJ0eXBlIjoidGhyb3R0bGluZyJ9LHsiY2lkcnMiOlsiMjQuMTI2LjIxNi4xODgiXSwidHlwZSI6ImNsaWVudCJ9XX0.Uvi1z6wub24tUZdnc8Ytx92ChyHHtqA4zbWW7YVsainVR3kieQUyKr4U9qG8ChnwCC-NeHDsYjCsFcQghrzMdg';
+
 async function fetchBattlelog(rawTag) {
   const cleanTag = rawTag.replace(/[#\s]/g, '').toUpperCase();
-  const apiPath = '/v1/players/' + encodeURIComponent('#' + cleanTag) + '/battlelog';
-  const apiUrl  = 'https://api.brawlstars.com' + apiPath;
+  const apiUrl = 'https://api.brawlstars.com/v1/players/' + encodeURIComponent('#' + cleanTag) + '/battlelog';
+  const token  = localStorage.getItem('bsToken') || DEFAULT_BS_TOKEN;
 
-  // Token from localStorage (user can save their own key)
-  const token = localStorage.getItem('bsToken') || '';
-
-  const makeHeaders = () => token ? { 'Authorization': 'Bearer ' + token } : {};
-
-  // Proxy list — each returns the raw JSON body
+  // corsproxy.io supports passing headers via x-cors-headers query param
+  // allorigins wraps in {"contents":"..."} for GET with ?url=
+  // thingproxy forwards everything including headers
   const proxies = [
+    // corsproxy.io — forwards Authorization header directly
     async () => {
-      const u = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
-      const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
+      const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`, {
+        headers: { 'Authorization': 'Bearer ' + token, 'x-requested-with': 'XMLHttpRequest' },
+        signal: AbortSignal.timeout(14000),
+      });
+      if (!r.ok) { const t = await r.text(); throw new Error('corsproxy ' + r.status + ' ' + t.slice(0,80)); }
+      return r.json();
+    },
+    // allorigins — wraps response in .contents string, need to parse
+    async () => {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`, {
+        signal: AbortSignal.timeout(14000),
+      });
       if (!r.ok) throw new Error('allorigins ' + r.status);
+      const wrapper = await r.json();
+      const data = JSON.parse(wrapper.contents);
+      if (data.reason) throw new Error(data.reason);
+      return data;
+    },
+    // allorigins raw (no auth header, may return 403 from BS API itself)
+    async () => {
+      const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {
+        signal: AbortSignal.timeout(14000),
+      });
+      if (!r.ok) throw new Error('allorigins-raw ' + r.status);
       return r.json();
     },
+    // thingproxy — simple reverse proxy, passes headers
     async () => {
-      const u = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
-      const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
-      if (!r.ok) throw new Error('corsproxy ' + r.status);
+      const r = await fetch(`https://thingproxy.freeboard.io/fetch/${apiUrl}`, {
+        headers: { 'Authorization': 'Bearer ' + token },
+        signal: AbortSignal.timeout(14000),
+      });
+      if (!r.ok) throw new Error('thingproxy ' + r.status);
       return r.json();
     },
+    // Direct (only works if CORS header present — unlikely but worth a try)
     async () => {
-      // Direct fetch (works if user has a valid token and browser allows — unlikely due to CORS, but try)
-      const r = await fetch(apiUrl, { headers: makeHeaders(), signal: AbortSignal.timeout(12000) });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        throw new Error(body.reason || ('HTTP ' + r.status));
-      }
+      const r = await fetch(apiUrl, {
+        headers: { 'Authorization': 'Bearer ' + token },
+        signal: AbortSignal.timeout(14000),
+      });
+      if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.reason || 'direct ' + r.status); }
       return r.json();
     },
   ];
 
-  let lastErr;
+  const errors = [];
   for (const attempt of proxies) {
     try {
       const data = await attempt();
-      const items = data.items || data.battle_log || [];
-      const battles = items.filter(b => b.battle?.teams?.length === 2).slice(0, 25);
-      if (items.length === 0 && data.reason) throw new Error(data.reason);
-      return battles;
+      const items = Array.isArray(data.items) ? data.items : [];
+      if (data.reason) throw new Error(data.reason);
+      return items.filter(b => b.battle?.teams?.length === 2).slice(0, 25);
     } catch (e) {
-      lastErr = e;
+      errors.push(e.message);
     }
   }
-  throw lastErr || new Error('All proxies failed');
+  throw new Error(errors.join(' | '));
 }
 
 // ── Time formatting ───────────────────────────────────────────────────────────

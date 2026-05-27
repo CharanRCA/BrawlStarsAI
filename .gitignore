@@ -2,3 +2,4 @@ node_modules/
 public/
 .vite/
 *.log
+apiusage.txt
