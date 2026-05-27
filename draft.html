@@ -46,7 +46,7 @@
 
       <!-- ── AUTO MODE ─────────────────────────────────────── -->
       <div id="autoPanel">
-        <div class="glass tag-card" style="padding:22px 24px;margin-bottom:24px;">
+        <div class="glass tag-card" style="padding:22px 24px;margin-bottom:16px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
             <div style="width:32px;height:32px;border-radius:9px;background:rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;font-size:.9rem;">🏷️</div>
             <span style="font-weight:800;font-size:.9rem;">Player Tag</span>
@@ -59,6 +59,23 @@
             <button id="loadBtn" class="btn-primary" style="white-space:nowrap;">🔍 Load Matches</button>
           </div>
           <p style="font-size:.72rem;color:rgba(255,255,255,.22);margin-top:10px;">ⓘ Find your tag in-game: Menu → Settings → Account</p>
+        </div>
+
+        <!-- API Token (collapsed) -->
+        <div style="margin-bottom:20px;">
+          <button onclick="document.getElementById('tokenPanel').style.display=document.getElementById('tokenPanel').style.display==='none'?'block':'none'" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;padding:0;font-family:inherit;">
+            🔑 API Token (optional but recommended) <span id="tokenSavedBadge" style="display:none;" class="badge badge-green">Saved ✓</span>
+          </button>
+          <div id="tokenPanel" style="display:none;margin-top:10px;">
+            <div class="glass" style="padding:16px 18px;border-color:rgba(251,191,36,.15);background:rgba(251,191,36,.04);">
+              <p style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:10px;line-height:1.6;">The Brawl Stars API requires a free token to fetch match data. <a href="https://developer.brawlstars.com" target="_blank" style="color:#93c5fd;">Get one free at developer.brawlstars.com</a> → add <strong>your current IP</strong> as an allowed key.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input id="tokenInput" class="input" style="flex:1;min-width:200px;font-family:monospace;font-size:.82rem;" placeholder="eyJ0eXAiOiJKV1Qi..."/>
+                <button onclick="saveToken()" class="btn-primary" style="padding:10px 16px;font-size:.82rem;">Save Token</button>
+                <button onclick="clearToken()" class="btn-secondary" style="padding:10px 12px;font-size:.82rem;">Clear</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="errorBox" class="error-box" style="display:none;margin-bottom:20px;">⚠️ <span id="errorText"></span></div>
@@ -238,6 +255,29 @@ function switchMode(mode) {
   document.getElementById('btnManual').className = 'mode-tab' + (mode === 'manual' ? ' mode-tab-active' : '');
 }
 
+// ── Token helpers ─────────────────────────────────────────────
+function saveToken() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  localStorage.setItem('bsToken', t);
+  document.getElementById('tokenSavedBadge').style.display = 'inline-flex';
+  document.getElementById('tokenPanel').style.display = 'none';
+}
+function clearToken() {
+  localStorage.removeItem('bsToken');
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('tokenSavedBadge').style.display = 'none';
+}
+// Pre-fill token input if already saved
+(function() {
+  const saved = localStorage.getItem('bsToken');
+  if (saved) {
+    const el = document.getElementById('tokenInput');
+    if (el) el.value = saved;
+    document.getElementById('tokenSavedBadge').style.display = 'inline-flex';
+  }
+})();
+
 // ── AUTO MODE ─────────────────────────────────────────────────
 const tagInput   = document.getElementById('tagInput');
 const loadBtn    = document.getElementById('loadBtn');
@@ -276,9 +316,14 @@ async function loadMatches() {
   } catch(err) {
     skeleton.style.display = 'none';
     const m = err.message || '';
-    if (m.includes('403') || m.includes('accessDenied')) setError('API access denied. The Brawl Stars API requires a valid token.');
-    else if (m.includes('404') || m.includes('notFound')) setError('Player not found. Double-check your tag (no # needed).');
-    else setError('Could not load matches. Try again in a moment. (' + m + ')');
+    if (m.includes('403') || m.includes('accessDenied')) {
+      document.getElementById('errorText').innerHTML = '403 Access Denied. Add your free API token above (click 🔑 API Token). <a href="https://developer.brawlstars.com" target="_blank" style="color:#93c5fd;text-decoration:underline;">Get token →</a>';
+      errorBox.style.display = 'flex';
+    } else if (m.includes('404') || m.includes('notFound')) {
+      setError('Player not found. Check your tag — enter it without the # symbol.');
+    } else {
+      setError('Could not load matches (' + m + '). Try again or check your API token.');
+    }
     emptyState.style.display = 'block';
   } finally {
     loadBtn.disabled = false;

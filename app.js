@@ -169,66 +169,79 @@ function makeBrawlerPortrait(playerOrName, size, isStarPlayer) {
   </div>`;
 }
 
-// ── AI (g4f.dev) ─────────────────────────────────────────────────────────────
-const PRIMARY_MODEL = 'deepseek-ai/DeepSeek-V4-Flash';
-const FALLBACK_MODEL = 'XiaomiMiMo/MiMo-V2.5';
-
-let _g4fClient = null;
-let _g4fReady = null;
-
-function loadG4f() {
-  if (_g4fReady) return _g4fReady;
-  _g4fReady = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.textContent = `import { createClient } from 'https://g4f.dev/dist/js/providers.js'; window.__g4fCreateClient = createClient;`;
-    const poll = setInterval(() => { if (window.__g4fCreateClient) { clearInterval(poll); resolve(); } }, 100);
-    setTimeout(() => { clearInterval(poll); reject(new Error('g4f timeout')); }, 20000);
-    document.head.appendChild(script);
-  });
-  return _g4fReady;
-}
-
-async function getAIClient() {
-  if (_g4fClient) return _g4fClient;
-  await loadG4f();
-  if (!window.__g4fCreateClient) throw new Error('g4f not available');
-  _g4fClient = window.__g4fCreateClient('deepinfra');
-  return _g4fClient;
-}
-
-async function callAI(messages, model) {
-  const client = await getAIClient();
-  const res = await client.chat.completions.create({ model, messages });
-  const content = res.choices?.[0]?.message?.content;
-  if (!content) throw new Error('Empty response');
-  return content;
-}
+// ── AI via g4f.dev (OpenAI-compatible, free) ─────────────────────────────────
+const AI_ENDPOINT = 'https://api.g4f.dev/v1/chat/completions';
+const AI_MODELS = [
+  'gpt-4o-mini',
+  'gpt-4o',
+  'claude-3-haiku',
+  'llama-3.3-70b',
+];
 
 async function sendAI(messages) {
-  try { return await callAI(messages, PRIMARY_MODEL); }
-  catch { return await callAI(messages, FALLBACK_MODEL); }
+  for (const model of AI_MODELS) {
+    try {
+      const res = await fetch(AI_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages, stream: false }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) return content;
+    } catch (e) {
+      // try next model
+    }
+  }
+  throw new Error('All AI models failed');
 }
 
 // ── Battlelog fetch ──────────────────────────────────────────────────────────
 async function fetchBattlelog(rawTag) {
   const cleanTag = rawTag.replace(/[#\s]/g, '').toUpperCase();
-  const apiUrl = 'https://api.brawlstars.com/v1/players/' + encodeURIComponent('#' + cleanTag) + '/battlelog';
+  const apiPath = '/v1/players/' + encodeURIComponent('#' + cleanTag) + '/battlelog';
+  const apiUrl  = 'https://api.brawlstars.com' + apiPath;
 
+  // Token from localStorage (user can save their own key)
+  const token = localStorage.getItem('bsToken') || '';
+
+  const makeHeaders = () => token ? { 'Authorization': 'Bearer ' + token } : {};
+
+  // Proxy list — each returns the raw JSON body
   const proxies = [
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    url => `https://cors-anywhere.herokuapp.com/${url}`,
+    async () => {
+      const u = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+      const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('allorigins ' + r.status);
+      return r.json();
+    },
+    async () => {
+      const u = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
+      const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('corsproxy ' + r.status);
+      return r.json();
+    },
+    async () => {
+      // Direct fetch (works if user has a valid token and browser allows — unlikely due to CORS, but try)
+      const r = await fetch(apiUrl, { headers: makeHeaders(), signal: AbortSignal.timeout(12000) });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.reason || ('HTTP ' + r.status));
+      }
+      return r.json();
+    },
   ];
 
   let lastErr;
-  for (const makeProxy of proxies) {
+  for (const attempt of proxies) {
     try {
-      const res = await fetch(makeProxy(apiUrl), { signal: AbortSignal.timeout(10000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await attempt();
       const items = data.items || data.battle_log || [];
-      return items.filter(b => b.battle?.teams?.length === 2).slice(0, 25);
+      const battles = items.filter(b => b.battle?.teams?.length === 2).slice(0, 25);
+      if (items.length === 0 && data.reason) throw new Error(data.reason);
+      return battles;
     } catch (e) {
       lastErr = e;
     }
