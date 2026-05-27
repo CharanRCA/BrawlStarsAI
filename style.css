@@ -182,6 +182,7 @@ nav { flex: 1; padding: 4px 10px; }
   background: rgba(79,142,247,.04);
 }
 .input::placeholder { color: rgba(255,255,255,.28); }
+select.input { font-family: inherit; }
 select.input option { background: #1a1a2e; }
 
 /* Typography */
@@ -320,12 +321,13 @@ select.input option { background: #1a1a2e; }
   font-size: .72rem; font-weight: 700; margin-bottom: 5px;
 }
 .win-bar {
-  height: 7px; border-radius: 99px;
+  height: 8px; border-radius: 99px;
   background: rgba(255,255,255,.06);
   overflow: hidden; display: flex;
+  gap: 1px;
 }
-.win-bar-fill-blue { background: linear-gradient(90deg, #4f8ef7, #38bdf8); transition: width .9s cubic-bezier(.4,0,.2,1); }
-.win-bar-fill-red  { background: linear-gradient(90deg, #f87171, #fb923c); transition: width .9s cubic-bezier(.4,0,.2,1); }
+.win-bar-fill-blue { background: linear-gradient(90deg, #4f8ef7, #38bdf8); height: 100%; transition: width .9s cubic-bezier(.4,0,.2,1); border-radius: 99px 0 0 99px; }
+.win-bar-fill-red  { background: linear-gradient(90deg, #f87171, #fb923c); height: 100%; transition: width .9s cubic-bezier(.4,0,.2,1); border-radius: 0 99px 99px 0; }
 
 /* ── Chat ──────────────────────────────────────────────────── */
 .chat-messages {
@@ -346,8 +348,8 @@ select.input option { background: #1a1a2e; }
   font-size: .88rem; line-height: 1.65; color: rgba(255,255,255,.88);
   white-space: pre-wrap;
 }
-.msg-bubble.bot  { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 4px 16px 16px 16px; }
-.msg-bubble.user { background: rgba(79,142,247,.12); border: 1px solid rgba(79,142,247,.2); border-radius: 16px 4px 16px 16px; }
+.msg-bubble.bot  { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 4px 16px 16px 16px; word-break: break-word; }
+.msg-bubble.user { background: rgba(79,142,247,.12); border: 1px solid rgba(79,142,247,.2); border-radius: 16px 4px 16px 16px; word-break: break-word; }
 
 .chat-input-row {
   display: flex; gap: 10px; padding: 14px 16px;
@@ -452,7 +454,7 @@ select.input option { background: #1a1a2e; }
 
 /* ── Empty state ─────────────────────────────────────────── */
 .empty-state {
-  text-align: center; padding: 72px 0;
+  text-align: center; padding: 64px 0;
   color: rgba(255,255,255,.18);
   animation: fadeUp .4s ease;
 }
@@ -468,7 +470,7 @@ select.input option { background: #1a1a2e; }
     transform: translateX(-100%);
   }
   .sidebar.open { transform: translateX(0); }
-  .sidebar-overlay { display: block; }
+  .sidebar-overlay.visible { display: block; }
   .mobile-header { display: flex; }
   .content { padding: 20px 14px; }
   .teams-row { flex-wrap: wrap; justify-content: center; }

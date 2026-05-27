@@ -69,7 +69,7 @@
           <p style="font-size:.78rem;margin-top:6px;color:rgba(255,255,255,.15);">Recent 3v3 battles will appear here</p>
         </div>
 
-        <div id="skeleton" style="display:none;display:flex;flex-direction:column;gap:14px;">
+        <div id="skeleton" style="display:none;flex-direction:column;gap:14px;">
           <div class="glass" style="padding:20px;animation:pulse 1.5s infinite;"><div style="height:12px;background:rgba(255,255,255,.07);border-radius:8px;width:40%;margin-bottom:16px;"></div><div style="display:flex;justify-content:center;gap:10px;"><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div></div></div>
           <div class="glass" style="padding:20px;animation:pulse 1.5s infinite .15s;"><div style="height:12px;background:rgba(255,255,255,.07);border-radius:8px;width:30%;margin-bottom:16px;"></div><div style="display:flex;justify-content:center;gap:10px;"><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div></div></div>
         </div>
@@ -214,6 +214,22 @@
 <script>
 initSidebar();
 
+// ── Mode emoji lookup (handles camelCase API strings) ─────────
+function getModeEmoji(raw) {
+  const map = {
+    'gemGrab':'💎','gem_grab':'💎','Gem Grab':'💎',
+    'brawlBall':'⚽','brawl_ball':'⚽','Brawl Ball':'⚽',
+    'heist':'💣','Heist':'💣',
+    'bounty':'⭐','Bounty':'⭐',
+    'hotZone':'🔥','hot_zone':'🔥','Hot Zone':'🔥',
+    'knockout':'💀','Knockout':'💀',
+    'showdown':'🏆','Showdown':'🏆',
+    'duels':'⚔️','Duels':'⚔️',
+    'wipeout':'💥','Wipeout':'💥',
+  };
+  return map[raw] || map[(raw||'').replace(/([A-Z])/g,' $1').trim()] || '⚔️';
+}
+
 // ── Mode switching ────────────────────────────────────────────
 function switchMode(mode) {
   document.getElementById('autoPanel').style.display   = mode === 'auto'   ? 'block' : 'none';
@@ -247,6 +263,7 @@ async function loadMatches() {
   matchList.innerHTML = '';
   matchCount.style.display = 'none';
   skeleton.style.display = 'flex';
+  skeleton.style.flexDirection = 'column';
   loadBtn.disabled = true;
   loadBtn.innerHTML = '<span class="spinner"></span> Loading...';
   try {
@@ -259,9 +276,9 @@ async function loadMatches() {
   } catch(err) {
     skeleton.style.display = 'none';
     const m = err.message || '';
-    if (m.includes('403') || m.includes('accessDenied')) setError('🔑 API access denied. Token may be invalid or IP not whitelisted.');
-    else if (m.includes('404') || m.includes('notFound')) setError('🔍 Player not found. Double-check your tag.');
-    else setError('Could not load matches: ' + m);
+    if (m.includes('403') || m.includes('accessDenied')) setError('API access denied. The Brawl Stars API requires a valid token.');
+    else if (m.includes('404') || m.includes('notFound')) setError('Player not found. Double-check your tag (no # needed).');
+    else setError('Could not load matches. Try again in a moment. (' + m + ')');
     emptyState.style.display = 'block';
   } finally {
     loadBtn.disabled = false;
@@ -287,7 +304,7 @@ function renderMatch(battle, idx) {
   card.innerHTML = `
     <div class="match-header">
       <div class="match-mode-pill">
-        <span>${MAP_EMOJIS[modeRaw] || MAP_EMOJIS[modeName] || '⚔️'}</span>
+        <span>${getModeEmoji(modeRaw)}</span>
         <span>${modeName || 'BATTLE'}</span>
         ${mapName ? `<span style="color:rgba(255,255,255,.3);">· ${mapName}</span>` : ''}
       </div>

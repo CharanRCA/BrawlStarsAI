@@ -112,11 +112,13 @@ function removeTyping() {
 }
 
 // Initial message
-appendMsg('assistant', "Hi! I'm your Brawl Stars AI Tutor. Ask me anything about strategy, brawlers, drafts, or how to improve your gameplay.");
+appendMsg('assistant', "Hi! I'm your Brawl Stars AI Coach 🤖\nAsk me anything about strategy, brawlers, counters, or how to improve. I'll give you concise, actionable advice.");
+messagesEl.scrollTop = 0;
 
-chatInput.addEventListener('input', () => {
+function updateSendBtn() {
   sendBtn.disabled = !chatInput.value.trim() || isLoading;
-});
+}
+chatInput.addEventListener('input', updateSendBtn);
 
 chatInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !sendBtn.disabled) handleSend();
@@ -166,7 +168,7 @@ async function handleSend() {
   }
 
   isLoading = false;
-  sendBtn.disabled = !chatInput.value.trim();
+  updateSendBtn();
 }
 </script>
 </body>
