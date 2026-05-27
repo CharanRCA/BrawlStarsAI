@@ -212,12 +212,28 @@ async function sendAI(messages) {
 
 // ── Battlelog fetch ──────────────────────────────────────────────────────────
 async function fetchBattlelog(rawTag) {
-  const tag = encodeURIComponent('#' + rawTag.replace(/[#\s]/g, '').toUpperCase());
-  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.brawlstars.com/v1/players/' + tag + '/battlelog')}`;
-  const res = await fetch(proxyUrl);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return (data.items || []).filter(b => b.battle?.teams?.length === 2).slice(0, 25);
+  const cleanTag = rawTag.replace(/[#\s]/g, '').toUpperCase();
+  const apiUrl = 'https://api.brawlstars.com/v1/players/' + encodeURIComponent('#' + cleanTag) + '/battlelog';
+
+  const proxies = [
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://cors-anywhere.herokuapp.com/${url}`,
+  ];
+
+  let lastErr;
+  for (const makeProxy of proxies) {
+    try {
+      const res = await fetch(makeProxy(apiUrl), { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const items = data.items || data.battle_log || [];
+      return items.filter(b => b.battle?.teams?.length === 2).slice(0, 25);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('All proxies failed');
 }
 
 // ── Time formatting ───────────────────────────────────────────────────────────

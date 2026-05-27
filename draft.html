@@ -32,87 +32,206 @@
     </header>
 
     <div class="content">
-      <div style="margin-bottom:28px;">
+      <!-- Page header -->
+      <div style="margin-bottom:24px;">
         <h2 class="page-title" style="margin-bottom:6px;">Draft Analyzer</h2>
-        <p style="color:rgba(255,255,255,.35);font-size:.88rem;">Enter your player tag to load recent matches with AI draft analysis.</p>
+        <p style="color:rgba(255,255,255,.35);font-size:.88rem;">Analyze drafts automatically from your match history, or pick brawlers manually.</p>
       </div>
 
-      <!-- Tag input -->
-      <div class="glass tag-card" style="padding:22px 24px;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-          <div style="width:32px;height:32px;border-radius:9px;background:rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;font-size:.9rem;">🏷️</div>
-          <span style="font-weight:800;font-size:.9rem;">Player Tag</span>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <div style="position:relative;flex:1;min-width:200px;max-width:380px;">
-            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.35);font-weight:900;font-family:monospace;font-size:1rem;">#</span>
-            <input id="tagInput" class="input" style="padding-left:30px;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:.95rem;" placeholder="2RU9JVVGL2"/>
+      <!-- Mode toggler -->
+      <div class="glass" style="padding:6px;margin-bottom:24px;display:inline-flex;gap:4px;border-radius:14px;">
+        <button id="btnAuto" class="mode-tab mode-tab-active" onclick="switchMode('auto')">🔄 Automatic</button>
+        <button id="btnManual" class="mode-tab" onclick="switchMode('manual')">🎯 Manual</button>
+      </div>
+
+      <!-- ── AUTO MODE ─────────────────────────────────────── -->
+      <div id="autoPanel">
+        <div class="glass tag-card" style="padding:22px 24px;margin-bottom:24px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <div style="width:32px;height:32px;border-radius:9px;background:rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;font-size:.9rem;">🏷️</div>
+            <span style="font-weight:800;font-size:.9rem;">Player Tag</span>
           </div>
-          <button id="loadBtn" class="btn-primary" style="white-space:nowrap;">� Load Matches</button>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div style="position:relative;flex:1;min-width:200px;max-width:380px;">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.35);font-weight:900;font-family:monospace;font-size:1rem;">#</span>
+              <input id="tagInput" class="input" style="padding-left:30px;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:.95rem;" placeholder="2RU9JVVGL2"/>
+            </div>
+            <button id="loadBtn" class="btn-primary" style="white-space:nowrap;">🔍 Load Matches</button>
+          </div>
+          <p style="font-size:.72rem;color:rgba(255,255,255,.22);margin-top:10px;">ⓘ Find your tag in-game: Menu → Settings → Account</p>
         </div>
-        <p style="font-size:.72rem;color:rgba(255,255,255,.22);margin-top:10px;">ⓘ Find your tag in-game: Menu → Settings → Account</p>
+
+        <div id="errorBox" class="error-box" style="display:none;margin-bottom:20px;">⚠️ <span id="errorText"></span></div>
+
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-icon">🎮</div>
+          <p style="font-size:.92rem;font-weight:600;">Enter your player tag to load matches</p>
+          <p style="font-size:.78rem;margin-top:6px;color:rgba(255,255,255,.15);">Recent 3v3 battles will appear here</p>
+        </div>
+
+        <div id="skeleton" style="display:none;display:flex;flex-direction:column;gap:14px;">
+          <div class="glass" style="padding:20px;animation:pulse 1.5s infinite;"><div style="height:12px;background:rgba(255,255,255,.07);border-radius:8px;width:40%;margin-bottom:16px;"></div><div style="display:flex;justify-content:center;gap:10px;"><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div></div></div>
+          <div class="glass" style="padding:20px;animation:pulse 1.5s infinite .15s;"><div style="height:12px;background:rgba(255,255,255,.07);border-radius:8px;width:30%;margin-bottom:16px;"></div><div style="display:flex;justify-content:center;gap:10px;"><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div><div style="width:70px;height:70px;background:rgba(255,255,255,.07);border-radius:12px;"></div></div></div>
+        </div>
+
+        <div id="matchCount" style="display:none;margin-bottom:14px;">
+          <span id="matchCountText" style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.3);"></span>
+        </div>
+        <div id="matchList"></div>
       </div>
 
-      <!-- Error -->
-      <div id="errorBox" class="error-box" style="display:none;margin-bottom:20px;">⚠️ <span id="errorText"></span></div>
-
-      <!-- Empty state -->
-      <div id="emptyState" class="empty-state">
-        <div class="empty-state-icon">🎮</div>
-        <p style="font-size:.92rem;font-weight:600;">Enter your player tag to load matches</p>
-        <p style="font-size:.78rem;margin-top:6px;color:rgba(255,255,255,.15);">Recent 3v3 battles will appear here</p>
-      </div>
-
-      <!-- Skeleton -->
-      <div id="skeleton" style="display:none;">
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div class="glass" style="padding:20px;animation:pulse 1.5s infinite;">
-            <div style="height:14px;background:rgba(255,255,255,.07);border-radius:8px;width:40%;margin-bottom:16px;"></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
-              <div style="width:36px;height:24px;background:rgba(255,255,255,.07);border-radius:8px;"></div>
-              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
+      <!-- ── MANUAL MODE ────────────────────────────────────── -->
+      <div id="manualPanel" style="display:none;">
+        <!-- Teams -->
+        <div class="glass" style="padding:22px 24px;margin-bottom:16px;">
+          <div style="display:flex;gap:20px;flex-wrap:wrap;">
+            <!-- My Team -->
+            <div style="flex:1;min-width:240px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                <div style="width:8px;height:8px;border-radius:50%;background:#4f8ef7;box-shadow:0 0 8px #4f8ef7;"></div>
+                <span style="font-size:.75rem;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);">MY TEAM</span>
+              </div>
+              <div id="mySlots" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+            </div>
+            <!-- VS -->
+            <div style="display:flex;align-items:center;justify-content:center;padding:0 4px;">
+              <div class="vs-text">VS</div>
+            </div>
+            <!-- Enemy Team -->
+            <div style="flex:1;min-width:240px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                <div style="width:8px;height:8px;border-radius:50%;background:#f87171;box-shadow:0 0 8px #f87171;"></div>
+                <span style="font-size:.75rem;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.5);">ENEMY TEAM</span>
+              </div>
+              <div id="enemySlots" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
             </div>
           </div>
-          <div class="glass" style="padding:20px;animation:pulse 1.5s infinite 0.2s;">
-            <div style="height:14px;background:rgba(255,255,255,.07);border-radius:8px;width:30%;margin-bottom:16px;"></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
-              <div style="width:36px;height:24px;background:rgba(255,255,255,.07);border-radius:8px;"></div>
-              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
+
+          <!-- Map / Mode -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;">
+            <div>
+              <label style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.08em;display:block;margin-bottom:6px;">MAP</label>
+              <input id="manualMap" class="input" placeholder="e.g. Hard Rock Mine" style="font-size:.88rem;"/>
+            </div>
+            <div>
+              <label style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.08em;display:block;margin-bottom:6px;">MODE</label>
+              <select id="manualMode" class="input" style="font-size:.88rem;">
+                <option value="">Select mode...</option>
+                <option>Gem Grab</option><option>Brawl Ball</option><option>Heist</option>
+                <option>Bounty</option><option>Hot Zone</option><option>Knockout</option>
+                <option>Showdown</option><option>Duels</option>
+              </select>
             </div>
           </div>
+
+          <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center;">
+            <button id="manualAnalyzeBtn" class="btn-primary">⚡ Analyze Draft</button>
+            <button onclick="resetManual()" class="btn-secondary" style="padding:10px 16px;">↺ Reset</button>
+            <span id="manualHint" style="font-size:.78rem;color:rgba(255,255,255,.3);">Pick at least 2 brawlers per team</span>
+          </div>
         </div>
-      </div>
 
-      <!-- Match count -->
-      <div id="matchCount" style="display:none;margin-bottom:16px;">
-        <span id="matchCountText" style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.3);"></span>
-      </div>
+        <!-- Brawler picker -->
+        <div class="glass" style="padding:18px 20px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <span style="font-size:.72rem;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.4);">ADD TO:</span>
+            <div style="display:inline-flex;gap:4px;background:rgba(255,255,255,.05);padding:4px;border-radius:10px;">
+              <button id="pickerMyBtn"    class="picker-team-btn picker-team-active" onclick="setPickTarget('my')">🔵 My Team</button>
+              <button id="pickerEnemyBtn" class="picker-team-btn" onclick="setPickTarget('enemy')">🔴 Enemy</button>
+            </div>
+            <input id="brawlerSearch" class="input" style="flex:1;min-width:160px;max-width:260px;padding:8px 14px;font-size:.85rem;" placeholder="🔍 Search brawler..."/>
+          </div>
+          <div id="brawlerGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;max-height:320px;overflow-y:auto;padding-right:4px;"></div>
+        </div>
 
-      <!-- Matches list -->
-      <div id="matchList"></div>
+        <!-- Manual AI result -->
+        <div id="manualResult" style="display:none;animation:fadeUp .3s ease;"></div>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+.mode-tab {
+  padding: 9px 20px; border-radius: 10px;
+  border: none; background: transparent;
+  color: rgba(255,255,255,.45); font-size: .88rem; font-weight: 700;
+  cursor: pointer; transition: all .18s; font-family: inherit;
+}
+.mode-tab-active {
+  background: linear-gradient(135deg,rgba(79,142,247,.2),rgba(176,110,245,.2));
+  color: #fff;
+  border: 1px solid rgba(79,142,247,.3);
+}
+.mode-tab:hover:not(.mode-tab-active) { color: rgba(255,255,255,.7); background: rgba(255,255,255,.05); }
+
+.picker-team-btn {
+  padding: 6px 14px; border-radius: 8px;
+  border: none; background: transparent;
+  color: rgba(255,255,255,.4); font-size: .8rem; font-weight: 700;
+  cursor: pointer; transition: all .15s; font-family: inherit;
+}
+.picker-team-active { background: rgba(79,142,247,.2); color: #93c5fd; }
+
+.brawler-pick-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px; border-radius: 12px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  cursor: pointer; transition: all .15s; position: relative;
+}
+.brawler-pick-tile:hover { border-color: rgba(79,142,247,.35); background: rgba(79,142,247,.06); transform: scale(1.04); }
+.brawler-pick-tile.in-my    { border-color: rgba(79,142,247,.5); background: rgba(79,142,247,.1); }
+.brawler-pick-tile.in-enemy { border-color: rgba(248,113,113,.5); background: rgba(248,113,113,.1); }
+.brawler-pick-tile img { width: 46px; height: 46px; border-radius: 10px; object-fit: cover; display: block; }
+.brawler-pick-name { font-size: 9px; font-weight: 700; color: rgba(255,255,255,.55); text-align: center; max-width: 64px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+.slot {
+  width: 72px; height: 72px; border-radius: 14px;
+  border: 2px dashed rgba(255,255,255,.12);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; cursor: default;
+  background: rgba(255,255,255,.02);
+  transition: all .2s;
+}
+.slot.filled { border-style: solid; border-color: rgba(255,255,255,.15); }
+.slot img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
+.slot-remove {
+  position: absolute; top: -6px; right: -6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #f87171; color: #fff; border: none;
+  font-size: 10px; font-weight: 900; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.slot-num {
+  font-size: 1.1rem; color: rgba(255,255,255,.12);
+}
 </style>
 
 <script src="app.js"></script>
 <script>
 initSidebar();
 
-const tagInput = document.getElementById('tagInput');
-const loadBtn  = document.getElementById('loadBtn');
-const errorBox = document.getElementById('errorBox');
+// ── Mode switching ────────────────────────────────────────────
+function switchMode(mode) {
+  document.getElementById('autoPanel').style.display   = mode === 'auto'   ? 'block' : 'none';
+  document.getElementById('manualPanel').style.display = mode === 'manual' ? 'block' : 'none';
+  document.getElementById('btnAuto').className   = 'mode-tab' + (mode === 'auto'   ? ' mode-tab-active' : '');
+  document.getElementById('btnManual').className = 'mode-tab' + (mode === 'manual' ? ' mode-tab-active' : '');
+}
+
+// ── AUTO MODE ─────────────────────────────────────────────────
+const tagInput   = document.getElementById('tagInput');
+const loadBtn    = document.getElementById('loadBtn');
+const errorBox   = document.getElementById('errorBox');
 const emptyState = document.getElementById('emptyState');
-const skeleton = document.getElementById('skeleton');
-const matchList = document.getElementById('matchList');
+const skeleton   = document.getElementById('skeleton');
+const matchList  = document.getElementById('matchList');
 const matchCount = document.getElementById('matchCount');
 
-tagInput.addEventListener('keydown', e => { if(e.key === 'Enter') loadMatches(); });
+tagInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadMatches(); });
 loadBtn.addEventListener('click', loadMatches);
 
 function setError(msg) {
@@ -127,156 +246,258 @@ async function loadMatches() {
   emptyState.style.display = 'none';
   matchList.innerHTML = '';
   matchCount.style.display = 'none';
-  skeleton.style.display = 'block';
+  skeleton.style.display = 'flex';
   loadBtn.disabled = true;
   loadBtn.innerHTML = '<span class="spinner"></span> Loading...';
-
   try {
     const battles = await fetchBattlelog(tag);
     skeleton.style.display = 'none';
-    if (battles.length === 0) {
-      setError('No 3v3 matches found for this tag.');
-      emptyState.style.display = 'block';
-      return;
-    }
+    if (!battles.length) { setError('No 3v3 matches found.'); emptyState.style.display = 'block'; return; }
     matchCount.style.display = 'block';
     document.getElementById('matchCountText').textContent = battles.length + ' Recent Matches';
-    battles.forEach((b, idx) => renderMatch(b, idx));
+    battles.forEach((b, i) => renderMatch(b, i));
   } catch(err) {
     skeleton.style.display = 'none';
-    const msg = err.message || '';
-    if (msg.includes('403') || msg.includes('accessDenied')) {
-      setError('🔑 API access denied. The Brawl Stars API requires a valid token with your IP whitelisted.');
-    } else if (msg.includes('404') || msg.includes('notFound')) {
-      setError('🔍 Player not found. Double-check your tag.');
-    } else {
-      setError('Error: ' + msg);
-    }
+    const m = err.message || '';
+    if (m.includes('403') || m.includes('accessDenied')) setError('🔑 API access denied. Token may be invalid or IP not whitelisted.');
+    else if (m.includes('404') || m.includes('notFound')) setError('🔍 Player not found. Double-check your tag.');
+    else setError('Could not load matches: ' + m);
     emptyState.style.display = 'block';
   } finally {
     loadBtn.disabled = false;
-    loadBtn.innerHTML = '🔄 Load Matches';
+    loadBtn.innerHTML = '🔍 Load Matches';
   }
 }
 
 function renderMatch(battle, idx) {
   const teams = battle.battle.teams;
-  const myTeam = teams[0];
-  const enemyTeam = teams[1];
+  const myTeam = teams[0], enemyTeam = teams[1];
   const result = battle.battle.result;
   const starTag = battle.battle.starPlayer?.tag;
-  const mapName = battle.event.map || '';
-  const modeRaw = battle.event.mode || battle.battle.mode || '';
+  const mapName = battle.event?.map || '';
+  const modeRaw = battle.event?.mode || battle.battle?.mode || '';
   const modeName = formatMode(modeRaw);
   const duration = battle.battle.duration;
-
   const resultClass = result === 'victory' ? 'victory' : result === 'defeat' ? 'defeat' : 'draw';
-  const resultText = result ? result.toUpperCase() : 'DRAW';
-
   const cardId = 'match-' + idx;
-
   const card = document.createElement('div');
   card.className = `glass match-card ${resultClass === 'victory' ? 'victory-card' : resultClass === 'defeat' ? 'defeat-card' : ''}`;
   card.id = cardId;
-  card.style.animationDelay = (idx * 0.06) + 's';
+  card.style.animationDelay = (idx * 0.05) + 's';
   card.innerHTML = `
     <div class="match-header">
       <div class="match-mode-pill">
-        <span>${MAP_EMOJIS[battle.event?.mode?.replace(/([A-Z])/g,' $1').trim()] || '⚔️'}</span>
+        <span>${MAP_EMOJIS[modeRaw] || MAP_EMOJIS[modeName] || '⚔️'}</span>
         <span>${modeName || 'BATTLE'}</span>
-        ${mapName ? `<span style="color:rgba(255,255,255,.35);">· ${mapName}</span>` : ''}
+        ${mapName ? `<span style="color:rgba(255,255,255,.3);">· ${mapName}</span>` : ''}
       </div>
       <span style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,.28);">${timeAgo(battle.battleTime)}</span>
     </div>
     <div class="match-body">
       <div class="match-result-row">
-        <div class="match-result ${resultClass}">${resultText}</div>
+        <div class="match-result ${resultClass}">${(result || 'draw').toUpperCase()}</div>
         <div id="${cardId}-badges" style="display:flex;gap:7px;flex-wrap:wrap;"></div>
       </div>
       <div class="teams-row">
-        <div class="team-side" id="${cardId}-my">
-          ${myTeam.map(p => makeBrawlerPortrait(p, 70, starTag && p.tag === starTag)).join('')}
-        </div>
+        <div class="team-side">${myTeam.map(p => makeBrawlerPortrait(p, 70, starTag && p.tag === starTag)).join('')}</div>
         <div class="vs-divider">
           <span class="vs-text">VS</span>
           ${duration ? `<span class="match-duration">${Math.floor(duration/60)}m ${duration%60}s</span>` : ''}
         </div>
-        <div class="team-side enemy" id="${cardId}-enemy">
-          ${enemyTeam.map(p => makeBrawlerPortrait(p, 70, starTag && p.tag === starTag)).join('')}
-        </div>
+        <div class="team-side enemy">${enemyTeam.map(p => makeBrawlerPortrait(p, 70, starTag && p.tag === starTag)).join('')}</div>
       </div>
       <div id="${cardId}-ai"></div>
-    </div>
-  `;
+    </div>`;
   matchList.appendChild(card);
-
-  // AI analyse button
   const aiDiv = document.getElementById(cardId + '-ai');
-  const analyzeBtn = document.createElement('button');
-  analyzeBtn.className = 'ai-analyze-btn';
-  analyzeBtn.innerHTML = '⚡ AI Draft Analysis';
-  analyzeBtn.onclick = () => runAIAnalysis(battle, cardId, analyzeBtn, myTeam, enemyTeam, mapName, modeName, result);
-  aiDiv.appendChild(analyzeBtn);
+  const btn = document.createElement('button');
+  btn.className = 'ai-analyze-btn';
+  btn.innerHTML = '⚡ AI Draft Analysis';
+  btn.onclick = () => runAIAnalysis(cardId, btn, myTeam.map(p=>p.brawler.name), enemyTeam.map(p=>p.brawler.name), mapName, modeName, result);
+  aiDiv.appendChild(btn);
 }
 
-async function runAIAnalysis(battle, cardId, btn, myTeam, enemyTeam, mapName, modeName, result) {
+async function runAIAnalysis(cardId, btn, myNames, enemyNames, mapName, modeName, result) {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Analyzing...';
-
-  const myNames = myTeam.map(p => p.brawler.name).join(', ');
-  const enemyNames = enemyTeam.map(p => p.brawler.name).join(', ');
-
   try {
-    const raw = await sendAI([{
-      role: 'user',
-      content: `You are a Brawl Stars draft analyst. Given this ${modeName} match on ${mapName || 'unknown map'}:
-My team: ${myNames}
-Enemy team: ${enemyNames}
-Result: ${result || 'unknown'}
-Respond ONLY with valid JSON, no markdown:
-{"myWinChance":<0-100>,"enemyWinChance":<0-100>,"draftScore":<0-100>,"tip":"<one short coaching tip>"}`
+    const raw = await sendAI([{ role:'user', content:
+      `You are a Brawl Stars draft analyst. ${modeName} match on ${mapName||'unknown map'}.\nMy team: ${myNames.join(', ')}\nEnemy: ${enemyNames.join(', ')}\nResult: ${result||'unknown'}\nRespond ONLY valid JSON, no markdown:\n{"myWinChance":<0-100>,"enemyWinChance":<0-100>,"draftScore":<0-100>,"tip":"<one short tip>"}`
     }]);
-
-    const match = raw.match(/\{[\s\S]*\}/);
-    const data = match ? JSON.parse(match[0]) : null;
-    if (!data) throw new Error('parse error');
-
-    const badgeDiv = document.getElementById(cardId + '-badges');
-    badgeDiv.innerHTML = `
-      <span class="badge badge-purple">📈 Draft ${data.draftScore}/100</span>
-      <span class="badge badge-blue">🏆 ${data.myWinChance}% win</span>
-    `;
-
-    const aiDiv = document.getElementById(cardId + '-ai');
+    const data = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || 'null');
+    if (!data) throw new Error('parse');
+    document.getElementById(cardId+'-badges').innerHTML =
+      `<span class="badge badge-purple">📈 Draft ${data.draftScore}/100</span><span class="badge badge-blue">🏆 ${data.myWinChance}% win</span>`;
+    const aiDiv = document.getElementById(cardId+'-ai');
     aiDiv.innerHTML = `
-      <div class="ai-tip">
-        <div class="ai-tip-icon">⚡</div>
-        <p>${data.tip}</p>
-      </div>
+      <div class="ai-tip"><div class="ai-tip-icon">⚡</div><p>${data.tip}</p></div>
       <div class="win-bar-wrap">
-        <div class="win-bar-row">
-          <span style="color:#93c5fd;">My Team &nbsp;${data.myWinChance}%</span>
-          <span style="color:#fca5a5;">${data.enemyWinChance}% &nbsp;Enemy</span>
-        </div>
+        <div class="win-bar-row"><span style="color:#93c5fd;">My Team ${data.myWinChance}%</span><span style="color:#fca5a5;">${data.enemyWinChance}% Enemy</span></div>
         <div class="win-bar">
           <div class="win-bar-fill-blue" style="width:0%" data-w="${data.myWinChance}"></div>
           <div class="win-bar-fill-red"  style="width:0%" data-w="${data.enemyWinChance}"></div>
         </div>
-      </div>
-    `;
-    setTimeout(() => {
-      aiDiv.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%');
-    }, 50);
-  } catch(err) {
-    const aiDiv = document.getElementById(cardId + '-ai');
+      </div>`;
+    setTimeout(() => aiDiv.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%'), 50);
+  } catch {
+    const aiDiv = document.getElementById(cardId+'-ai');
     aiDiv.innerHTML = '';
-    const retryBtn = document.createElement('button');
-    retryBtn.className = 'ai-analyze-btn';
-    retryBtn.innerHTML = '↺ Retry AI Analysis';
-    retryBtn.onclick = () => runAIAnalysis(battle, cardId, retryBtn, myTeam, enemyTeam, mapName, modeName, result);
-    aiDiv.appendChild(retryBtn);
+    const rb = document.createElement('button');
+    rb.className = 'ai-analyze-btn';
+    rb.innerHTML = '↺ Retry';
+    rb.onclick = () => runAIAnalysis(cardId, rb, myNames, enemyNames, mapName, modeName, result);
+    aiDiv.appendChild(rb);
   }
 }
+
+// ── MANUAL MODE ───────────────────────────────────────────────
+let pickTarget = 'my';
+const manualTeams = { my: [], enemy: [] };
+const MAX_PER_TEAM = 3;
+
+function setPickTarget(t) {
+  pickTarget = t;
+  document.getElementById('pickerMyBtn').className    = 'picker-team-btn' + (t==='my'    ? ' picker-team-active' : '');
+  document.getElementById('pickerEnemyBtn').className = 'picker-team-btn' + (t==='enemy' ? ' picker-team-active' : '');
+  renderBrawlerGrid();
+}
+
+function resetManual() {
+  manualTeams.my = []; manualTeams.enemy = [];
+  document.getElementById('manualResult').style.display = 'none';
+  renderSlots(); renderBrawlerGrid();
+}
+
+function renderSlots() {
+  ['my','enemy'].forEach(side => {
+    const el = document.getElementById(side + 'Slots');
+    el.innerHTML = '';
+    for (let i = 0; i < MAX_PER_TEAM; i++) {
+      const name = manualTeams[side][i];
+      const slot = document.createElement('div');
+      slot.className = 'slot' + (name ? ' filled' : '');
+      if (name) {
+        const img = getBrawlerImageUrl(name);
+        const color = BRAWLER_COLORS[name] || '#4f8ef7';
+        slot.innerHTML = img
+          ? `<img src="${img}" alt="${name}" onerror="this.style.display='none'">`
+          : `<div style="width:100%;height:100%;border-radius:12px;background:${color}25;color:${color};font-weight:900;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">${getBrawlerInitials(name)}</div>`;
+        slot.innerHTML += `<button class="slot-remove" onclick="removeBrawler('${side}',${i})">✕</button>`;
+        slot.title = name;
+      } else {
+        slot.innerHTML = `<span class="slot-num">${i+1}</span>`;
+      }
+      el.appendChild(slot);
+    }
+  });
+}
+
+function removeBrawler(side, idx) {
+  manualTeams[side].splice(idx, 1);
+  renderSlots(); renderBrawlerGrid();
+}
+
+function toggleBrawler(name) {
+  const myIdx = manualTeams.my.indexOf(name);
+  const enIdx = manualTeams.enemy.indexOf(name);
+  if (pickTarget === 'my') {
+    if (myIdx >= 0) { manualTeams.my.splice(myIdx, 1); }
+    else if (manualTeams.my.length < MAX_PER_TEAM && enIdx < 0) { manualTeams.my.push(name); }
+  } else {
+    if (enIdx >= 0) { manualTeams.enemy.splice(enIdx, 1); }
+    else if (manualTeams.enemy.length < MAX_PER_TEAM && myIdx < 0) { manualTeams.enemy.push(name); }
+  }
+  renderSlots(); renderBrawlerGrid();
+}
+
+function renderBrawlerGrid() {
+  const search = document.getElementById('brawlerSearch').value.toLowerCase();
+  const grid = document.getElementById('brawlerGrid');
+  const filtered = BRAWLER_NAMES.filter(n => n.toLowerCase().includes(search));
+  grid.innerHTML = '';
+  filtered.forEach(name => {
+    const inMy    = manualTeams.my.includes(name);
+    const inEnemy = manualTeams.enemy.includes(name);
+    const tile = document.createElement('div');
+    tile.className = 'brawler-pick-tile' + (inMy ? ' in-my' : inEnemy ? ' in-enemy' : '');
+    tile.title = name;
+    tile.onclick = () => toggleBrawler(name);
+    const img = getBrawlerImageUrl(name);
+    const color = BRAWLER_COLORS[name] || '#4f8ef7';
+    const badge = inMy ? `<div style="position:absolute;top:3px;right:3px;width:10px;height:10px;border-radius:50%;background:#4f8ef7;"></div>` : inEnemy ? `<div style="position:absolute;top:3px;right:3px;width:10px;height:10px;border-radius:50%;background:#f87171;"></div>` : '';
+    tile.innerHTML = `
+      ${badge}
+      ${img ? `<img src="${img}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+               <div style="display:none;width:46px;height:46px;border-radius:10px;background:${color}25;color:${color};font-weight:900;font-size:1rem;align-items:center;justify-content:center;">${getBrawlerInitials(name)}</div>`
+           : `<div style="width:46px;height:46px;border-radius:10px;background:${color}25;color:${color};font-weight:900;font-size:1rem;display:flex;align-items:center;justify-content:center;">${getBrawlerInitials(name)}</div>`}
+      <div class="brawler-pick-name">${name}</div>`;
+    grid.appendChild(tile);
+  });
+}
+
+document.getElementById('brawlerSearch').addEventListener('input', renderBrawlerGrid);
+
+document.getElementById('manualAnalyzeBtn').addEventListener('click', async () => {
+  const my = manualTeams.my, enemy = manualTeams.enemy;
+  if (my.length < 2 || enemy.length < 2) {
+    document.getElementById('manualHint').style.color = '#f87171';
+    setTimeout(() => document.getElementById('manualHint').style.color = 'rgba(255,255,255,.3)', 2000);
+    return;
+  }
+  const mapName  = document.getElementById('manualMap').value.trim() || 'Unknown Map';
+  const modeName = document.getElementById('manualMode').value || 'Unknown Mode';
+  const btn = document.getElementById('manualAnalyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  const resultEl = document.getElementById('manualResult');
+  resultEl.style.display = 'none';
+  try {
+    const raw = await sendAI([{ role:'user', content:
+      `You are a Brawl Stars draft analyst. ${modeName} on ${mapName}.\nMy team: ${my.join(', ')}\nEnemy: ${enemy.join(', ')}\nRespond ONLY valid JSON, no markdown:\n{"myWinChance":<0-100>,"enemyWinChance":<0-100>,"draftScore":<0-100>,"analysis":"<2-3 sentence analysis>","tip":"<one actionable tip>"}`
+    }]);
+    const data = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || 'null');
+    if (!data) throw new Error('parse');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div class="glass" style="padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <span style="font-size:.75rem;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.4);">ANALYSIS RESULT</span>
+          <span class="badge badge-purple">📈 Draft ${data.draftScore}/100</span>
+          <span class="badge badge-blue">🏆 ${data.myWinChance}% win chance</span>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;color:rgba(79,142,247,.7);margin-bottom:8px;">🔵 MY TEAM</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">${my.map(n => makeBrawlerPortrait(n, 60, false)).join('')}</div>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;color:rgba(248,113,113,.7);margin-bottom:8px;">🔴 ENEMY TEAM</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">${enemy.map(n => makeBrawlerPortrait(n, 60, false)).join('')}</div>
+          </div>
+        </div>
+        <div class="win-bar-wrap" style="margin-bottom:14px;">
+          <div class="win-bar-row"><span style="color:#93c5fd;">My Team ${data.myWinChance}%</span><span style="color:#fca5a5;">${data.enemyWinChance}% Enemy</span></div>
+          <div class="win-bar">
+            <div class="win-bar-fill-blue" style="width:0%" data-w="${data.myWinChance}"></div>
+            <div class="win-bar-fill-red"  style="width:0%" data-w="${data.enemyWinChance}"></div>
+          </div>
+        </div>
+        ${data.analysis ? `<div class="ai-tip" style="margin-bottom:10px;"><div class="ai-tip-icon">🧠</div><p>${data.analysis}</p></div>` : ''}
+        <div class="ai-tip"><div class="ai-tip-icon">⚡</div><p>${data.tip}</p></div>
+      </div>`;
+    setTimeout(() => resultEl.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%'), 50);
+  } catch(e) {
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `<div class="error-box">⚠️ Analysis failed. Try again.</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Analyze Draft';
+  }
+});
+
+// Init manual mode
+renderSlots();
+renderBrawlerGrid();
 </script>
 </body>
 </html>
