@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Draft Analyzer – Brawl AI</title>
+  <link rel="icon" href="brawlers/spike_portrait.png"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" style="display:none;"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚔️</div>
+      <div><h1>Brawl AI</h1><p>Tutor &amp; Analyzer</p></div>
+      <button id="sidebarClose" style="margin-left:auto;background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <nav>
+      <a href="index.html" class="nav-item"><span class="nav-icon">⚡</span>Home</a>
+      <a href="draft.html" class="nav-item active"><span class="nav-icon">⚔️</span>Draft Analyzer</a>
+      <a href="maps.html" class="nav-item"><span class="nav-icon">🗺️</span>Map Picker</a>
+      <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span>AI Chat</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="mobile-header">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <span style="font-weight:800;font-size:1rem;">Draft Analyzer</span>
+    </header>
+
+    <div class="content">
+      <div style="margin-bottom:28px;">
+        <h2 class="page-title" style="margin-bottom:6px;">Draft Analyzer</h2>
+        <p style="color:rgba(255,255,255,.35);font-size:.88rem;">Enter your player tag to load recent matches with AI draft analysis.</p>
+      </div>
+
+      <!-- Tag input -->
+      <div class="glass tag-card" style="padding:22px 24px;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <div style="width:32px;height:32px;border-radius:9px;background:rgba(79,142,247,.15);display:flex;align-items:center;justify-content:center;font-size:.9rem;">🏷️</div>
+          <span style="font-weight:800;font-size:.9rem;">Player Tag</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div style="position:relative;flex:1;min-width:200px;max-width:380px;">
+            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.35);font-weight:900;font-family:monospace;font-size:1rem;">#</span>
+            <input id="tagInput" class="input" style="padding-left:30px;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:.95rem;" placeholder="2RU9JVVGL2"/>
+          </div>
+          <button id="loadBtn" class="btn-primary" style="white-space:nowrap;">� Load Matches</button>
+        </div>
+        <p style="font-size:.72rem;color:rgba(255,255,255,.22);margin-top:10px;">ⓘ Find your tag in-game: Menu → Settings → Account</p>
+      </div>
+
+      <!-- Error -->
+      <div id="errorBox" class="error-box" style="display:none;margin-bottom:20px;">⚠️ <span id="errorText"></span></div>
+
+      <!-- Empty state -->
+      <div id="emptyState" class="empty-state">
+        <div class="empty-state-icon">🎮</div>
+        <p style="font-size:.92rem;font-weight:600;">Enter your player tag to load matches</p>
+        <p style="font-size:.78rem;margin-top:6px;color:rgba(255,255,255,.15);">Recent 3v3 battles will appear here</p>
+      </div>
+
+      <!-- Skeleton -->
+      <div id="skeleton" style="display:none;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="glass" style="padding:20px;animation:pulse 1.5s infinite;">
+            <div style="height:14px;background:rgba(255,255,255,.07);border-radius:8px;width:40%;margin-bottom:16px;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
+              <div style="width:36px;height:24px;background:rgba(255,255,255,.07);border-radius:8px;"></div>
+              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
+            </div>
+          </div>
+          <div class="glass" style="padding:20px;animation:pulse 1.5s infinite 0.2s;">
+            <div style="height:14px;background:rgba(255,255,255,.07);border-radius:8px;width:30%;margin-bottom:16px;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
+              <div style="width:36px;height:24px;background:rgba(255,255,255,.07);border-radius:8px;"></div>
+              <div style="display:flex;gap:10px;">${[1,2,3].map(()=>'<div style="width:68px;height:68px;background:rgba(255,255,255,.07);border-radius:12px;"></div>').join('')}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match count -->
+      <div id="matchCount" style="display:none;margin-bottom:16px;">
+        <span id="matchCountText" style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.3);"></span>
+      </div>
+
+      <!-- Matches list -->
+      <div id="matchList"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+
+<script src="app.js"></script>
+<script>
+initSidebar();
+
+const tagInput = document.getElementById('tagInput');
+const loadBtn  = document.getElementById('loadBtn');
+const errorBox = document.getElementById('errorBox');
+const emptyState = document.getElementById('emptyState');
+const skeleton = document.getElementById('skeleton');
+const matchList = document.getElementById('matchList');
+const matchCount = document.getElementById('matchCount');
+
+tagInput.addEventListener('keydown', e => { if(e.key === 'Enter') loadMatches(); });
+loadBtn.addEventListener('click', loadMatches);
+
+function setError(msg) {
+  errorBox.style.display = msg ? 'flex' : 'none';
+  document.getElementById('errorText').textContent = msg || '';
+}
+
+async function loadMatches() {
+  const tag = tagInput.value.trim();
+  if (!tag) return;
+  setError('');
+  emptyState.style.display = 'none';
+  matchList.innerHTML = '';
+  matchCount.style.display = 'none';
+  skeleton.style.display = 'block';
+  loadBtn.disabled = true;
+  loadBtn.innerHTML = '<span class="spinner"></span> Loading...';
+
+  try {
+    const battles = await fetchBattlelog(tag);
+    skeleton.style.display = 'none';
+    if (battles.length === 0) {
+      setError('No 3v3 matches found for this tag.');
+      emptyState.style.display = 'block';
+      return;
+    }
+    matchCount.style.display = 'block';
+    document.getElementById('matchCountText').textContent = battles.length + ' Recent Matches';
+    battles.forEach((b, idx) => renderMatch(b, idx));
+  } catch(err) {
+    skeleton.style.display = 'none';
+    const msg = err.message || '';
+    if (msg.includes('403') || msg.includes('accessDenied')) {
+      setError('🔑 API access denied. The Brawl Stars API requires a valid token with your IP whitelisted.');
+    } else if (msg.includes('404') || msg.includes('notFound')) {
+      setError('🔍 Player not found. Double-check your tag.');
+    } else {
+      setError('Error: ' + msg);
+    }
+    emptyState.style.display = 'block';
+  } finally {
+    loadBtn.disabled = false;
+    loadBtn.innerHTML = '🔄 Load Matches';
+  }
+}
+
+function renderMatch(battle, idx) {
+  const teams = battle.battle.teams;
+  const myTeam = teams[0];
+  const enemyTeam = teams[1];
+  const result = battle.battle.result;
+  const starTag = battle.battle.starPlayer?.tag;
+  const mapName = battle.event.map || '';
+  const modeRaw = battle.event.mode || battle.battle.mode || '';
+  const modeName = formatMode(modeRaw);
+  const duration = battle.battle.duration;
+
+  const resultClass = result === 'victory' ? 'victory' : result === 'defeat' ? 'defeat' : 'draw';
+  const resultText = result ? result.toUpperCase() : 'DRAW';
+
+  const cardId = 'match-' + idx;
+
+  const card = document.createElement('div');
+  card.className = `glass match-card ${resultClass === 'victory' ? 'victory-card' : resultClass === 'defeat' ? 'defeat-card' : ''}`;
+  card.id = cardId;
+  card.style.animationDelay = (idx * 0.06) + 's';
+  card.innerHTML = `
+    <div class="match-header">
+      <div class="match-mode-pill">
+        <span>${MAP_EMOJIS[battle.event?.mode?.replace(/([A-Z])/g,' $1').trim()] || '⚔️'}</span>
+        <span>${modeName || 'BATTLE'}</span>
+        ${mapName ? `<span style="color:rgba(255,255,255,.35);">· ${mapName}</span>` : ''}
+      </div>
+      <span style="font-size:.7rem;font-weight:600;color:rgba(255,255,255,.28);">${timeAgo(battle.battleTime)}</span>
+    </div>
+    <div class="match-body">
+      <div class="match-result-row">
+        <div class="match-result ${resultClass}">${resultText}</div>
+        <div id="${cardId}-badges" style="display:flex;gap:7px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="teams-row">
+        <div class="team-side" id="${cardId}-my">
+          ${myTeam.map(p => makeBrawlerPortrait(p, 70, starTag && p.tag === starTag)).join('')}
+        </div>
+        <div class="vs-divider">
+          <span class="vs-text">VS</span>
+          ${duration ? `<span class="match-duration">${Math.floor(duration/60)}m ${duration%60}s</span>` : ''}
+        </div>
+        <div class="team-side enemy" id="${cardId}-enemy">
+          ${enemyTeam.map(p => makeBrawlerPortrait(p, 70, starTag && p.tag === starTag)).join('')}
+        </div>
+      </div>
+      <div id="${cardId}-ai"></div>
+    </div>
+  `;
+  matchList.appendChild(card);
+
+  // AI analyse button
+  const aiDiv = document.getElementById(cardId + '-ai');
+  const analyzeBtn = document.createElement('button');
+  analyzeBtn.className = 'ai-analyze-btn';
+  analyzeBtn.innerHTML = '⚡ AI Draft Analysis';
+  analyzeBtn.onclick = () => runAIAnalysis(battle, cardId, analyzeBtn, myTeam, enemyTeam, mapName, modeName, result);
+  aiDiv.appendChild(analyzeBtn);
+}
+
+async function runAIAnalysis(battle, cardId, btn, myTeam, enemyTeam, mapName, modeName, result) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+
+  const myNames = myTeam.map(p => p.brawler.name).join(', ');
+  const enemyNames = enemyTeam.map(p => p.brawler.name).join(', ');
+
+  try {
+    const raw = await sendAI([{
+      role: 'user',
+      content: `You are a Brawl Stars draft analyst. Given this ${modeName} match on ${mapName || 'unknown map'}:
+My team: ${myNames}
+Enemy team: ${enemyNames}
+Result: ${result || 'unknown'}
+Respond ONLY with valid JSON, no markdown:
+{"myWinChance":<0-100>,"enemyWinChance":<0-100>,"draftScore":<0-100>,"tip":"<one short coaching tip>"}`
+    }]);
+
+    const match = raw.match(/\{[\s\S]*\}/);
+    const data = match ? JSON.parse(match[0]) : null;
+    if (!data) throw new Error('parse error');
+
+    const badgeDiv = document.getElementById(cardId + '-badges');
+    badgeDiv.innerHTML = `
+      <span class="badge badge-purple">📈 Draft ${data.draftScore}/100</span>
+      <span class="badge badge-blue">🏆 ${data.myWinChance}% win</span>
+    `;
+
+    const aiDiv = document.getElementById(cardId + '-ai');
+    aiDiv.innerHTML = `
+      <div class="ai-tip">
+        <div class="ai-tip-icon">⚡</div>
+        <p>${data.tip}</p>
+      </div>
+      <div class="win-bar-wrap">
+        <div class="win-bar-row">
+          <span style="color:#93c5fd;">My Team &nbsp;${data.myWinChance}%</span>
+          <span style="color:#fca5a5;">${data.enemyWinChance}% &nbsp;Enemy</span>
+        </div>
+        <div class="win-bar">
+          <div class="win-bar-fill-blue" style="width:0%" data-w="${data.myWinChance}"></div>
+          <div class="win-bar-fill-red"  style="width:0%" data-w="${data.enemyWinChance}"></div>
+        </div>
+      </div>
+    `;
+    setTimeout(() => {
+      aiDiv.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%');
+    }, 50);
+  } catch(err) {
+    const aiDiv = document.getElementById(cardId + '-ai');
+    aiDiv.innerHTML = '';
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'ai-analyze-btn';
+    retryBtn.innerHTML = '↺ Retry AI Analysis';
+    retryBtn.onclick = () => runAIAnalysis(battle, cardId, retryBtn, myTeam, enemyTeam, mapName, modeName, result);
+    aiDiv.appendChild(retryBtn);
+  }
+}
+</script>
+</body>
+</html>

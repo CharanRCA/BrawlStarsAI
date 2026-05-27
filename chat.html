@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AI Chat – Brawl AI</title>
+  <link rel="icon" href="brawlers/spike_portrait.png"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" style="display:none;"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚔️</div>
+      <div><h1>Brawl AI</h1><p>Tutor &amp; Analyzer</p></div>
+      <button id="sidebarClose" style="margin-left:auto;background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <nav>
+      <a href="index.html" class="nav-item"><span class="nav-icon">⚡</span>Home</a>
+      <a href="draft.html" class="nav-item"><span class="nav-icon">⚔️</span>Draft Analyzer</a>
+      <a href="maps.html" class="nav-item"><span class="nav-icon">🗺️</span>Map Picker</a>
+      <a href="chat.html" class="nav-item active"><span class="nav-icon">💬</span>AI Chat</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="mobile-header">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <span style="font-weight:800;font-size:1rem;">AI Chat</span>
+    </header>
+
+    <div class="content" style="display:flex;flex-direction:column;height:calc(100vh - 60px);padding-bottom:0;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06);">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,rgba(176,110,245,.25),rgba(79,142,247,.15));border:1px solid rgba(176,110,245,.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🤖</div>
+          <div>
+            <h2 style="font-size:1rem;font-weight:800;letter-spacing:-.01em;">AI Coach</h2>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <div style="width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 6px #34d399;"></div>
+              <span style="font-size:.7rem;color:rgba(255,255,255,.35);">Online</span>
+            </div>
+          </div>
+        </div>
+        <button id="clearBtn" class="btn-secondary" style="padding:7px 14px;font-size:.78rem;">🗑️ Clear</button>
+      </div>
+
+      <!-- Messages -->
+      <div class="glass chat-messages" id="messages" style="flex:1;margin-bottom:0;"></div>
+
+      <!-- Suggestions -->
+      <div class="suggestions" id="suggestions">
+        <button class="suggestion-chip" data-text="How do I counter Edgar as Piper?">Counter Edgar as Piper?</button>
+        <button class="suggestion-chip" data-text="Best draft for Gem Grab?">Best Gem Grab draft?</button>
+        <button class="suggestion-chip" data-text="Why am I losing on open maps?">Losing on open maps?</button>
+        <button class="suggestion-chip" data-text="Tips for playing Mortis">Tips for Mortis</button>
+        <button class="suggestion-chip" data-text="When should I use my gadget?">When to use gadget?</button>
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-row glass" style="border-radius:0 0 20px 20px;margin-bottom:16px;">
+        <input id="chatInput" class="input" style="flex:1;border-radius:10px;" placeholder="Ask about brawlers, strategy, maps..."/>
+        <button id="sendBtn" class="btn-primary" style="padding:10px 16px;border-radius:10px;font-size:1rem;" disabled>➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+initSidebar();
+
+const messagesEl = document.getElementById('messages');
+const chatInput  = document.getElementById('chatInput');
+const sendBtn    = document.getElementById('sendBtn');
+const clearBtn   = document.getElementById('clearBtn');
+const suggestionsEl = document.getElementById('suggestions');
+
+let history = [];
+let isLoading = false;
+
+function appendMsg(role, text) {
+  const isUser = role === 'user';
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (isUser ? 'user' : '');
+  row.innerHTML = `
+    <div class="msg-avatar ${isUser ? 'user' : 'bot'}">${isUser ? '👤' : '🤖'}</div>
+    <div class="msg-bubble ${isUser ? 'user' : 'bot'}">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+  `;
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return row;
+}
+
+function appendTyping() {
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.id = 'typing';
+  row.innerHTML = `
+    <div class="msg-avatar bot">✨</div>
+    <div class="msg-bubble bot"><span class="spinner"></span></div>
+  `;
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+// Initial message
+appendMsg('assistant', "Hi! I'm your Brawl Stars AI Tutor. Ask me anything about strategy, brawlers, drafts, or how to improve your gameplay.");
+
+chatInput.addEventListener('input', () => {
+  sendBtn.disabled = !chatInput.value.trim() || isLoading;
+});
+
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !sendBtn.disabled) handleSend();
+});
+
+sendBtn.addEventListener('click', handleSend);
+
+clearBtn.addEventListener('click', () => {
+  history = [];
+  messagesEl.innerHTML = '';
+  suggestionsEl.style.display = 'flex';
+  appendMsg('assistant', 'Chat cleared. How can I help you today?');
+});
+
+document.querySelectorAll('.suggestion-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    chatInput.value = btn.dataset.text;
+    sendBtn.disabled = false;
+    suggestionsEl.style.display = 'none';
+    handleSend();
+  });
+});
+
+async function handleSend() {
+  const text = chatInput.value.trim();
+  if (!text || isLoading) return;
+  chatInput.value = '';
+  sendBtn.disabled = true;
+  isLoading = true;
+  suggestionsEl.style.display = 'none';
+
+  appendMsg('user', text);
+  history.push({ role: 'user', content: text });
+
+  appendTyping();
+
+  try {
+    const context = { role: 'user', content: 'You are a helpful Brawl Stars coach. Give concise, actionable advice. Keep responses brief but informative.' };
+    const msgs = [context, ...history.slice(-8)];
+    const reply = await sendAI(msgs);
+    removeTyping();
+    history.push({ role: 'assistant', content: reply });
+    appendMsg('assistant', reply);
+  } catch(err) {
+    removeTyping();
+    appendMsg('assistant', 'Sorry, I had trouble connecting. Please try again.');
+  }
+
+  isLoading = false;
+  sendBtn.disabled = !chatInput.value.trim();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Brawl AI Tutor</title>
+  <link rel="icon" href="brawlers/spike_portrait.png"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" style="display:none;"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚔️</div>
+      <div><h1>Brawl AI</h1><p>Tutor &amp; Analyzer</p></div>
+      <button id="sidebarClose" style="margin-left:auto;background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <nav>
+      <a href="index.html" class="nav-item active"><span class="nav-icon">⚡</span>Home</a>
+      <a href="draft.html" class="nav-item"><span class="nav-icon">⚔️</span>Draft Analyzer</a>
+      <a href="maps.html" class="nav-item"><span class="nav-icon">🗺️</span>Map Picker</a>
+      <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span>AI Chat</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="mobile-header">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <span style="font-weight:800;font-size:1rem;">Brawl AI Tutor</span>
+    </header>
+
+    <div class="content">
+      <!-- Hero -->
+      <div style="text-align:center;padding:56px 0 48px;">
+        <div style="display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:99px;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);color:#93c5fd;font-size:.75rem;font-weight:700;letter-spacing:.06em;margin-bottom:22px;">
+          ✦ AI-POWERED COACH
+        </div>
+        <h1 style="font-size:clamp(2.6rem,7vw,4.5rem);font-weight:900;letter-spacing:-.03em;line-height:1.05;margin-bottom:20px;">
+          <span style="background:linear-gradient(135deg,#4f8ef7,#b06ef5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Master</span><br/>Your Game
+        </h1>
+        <p style="font-size:1rem;color:rgba(255,255,255,.45);max-width:480px;margin:0 auto 32px;line-height:1.75;">
+          AI-powered coaching for Brawl Stars. Analyze drafts, understand counters, and climb the ranks with personalized feedback.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <a href="draft.html" class="btn-primary" style="font-size:.92rem;padding:13px 28px;">⚔️ Draft Analyzer</a>
+          <a href="chat.html" class="btn-secondary" style="font-size:.92rem;padding:13px 24px;">💬 AI Chat</a>
+        </div>
+      </div>
+
+      <!-- Feature grid -->
+      <div class="feature-grid" style="margin-bottom:40px;">
+        <a href="draft.html" class="feature-card" style="border-color:rgba(251,146,60,.2);">
+          <div class="feature-icon" style="background:rgba(251,146,60,.12);box-shadow:0 4px 16px rgba(251,146,60,.15);">⚔️</div>
+          <h3>Draft Analyzer</h3>
+          <p>Load recent matches via player tag. Get AI draft score + win chance for each game.</p>
+          <span class="feature-arrow">↗</span>
+        </a>
+        <a href="maps.html" class="feature-card" style="border-color:rgba(52,211,153,.2);">
+          <div class="feature-icon" style="background:rgba(52,211,153,.12);box-shadow:0 4px 16px rgba(52,211,153,.15);">🗺️</div>
+          <h3>Map Picker</h3>
+          <p>Find the best brawlers for every map layout and game mode.</p>
+          <span class="feature-arrow">↗</span>
+        </a>
+        <a href="chat.html" class="feature-card" style="border-color:rgba(79,142,247,.2);">
+          <div class="feature-icon" style="background:rgba(79,142,247,.12);box-shadow:0 4px 16px rgba(79,142,247,.15);">💬</div>
+          <h3>AI Chat</h3>
+          <p>Ask anything about strategy, brawlers, counters, and specific matchups.</p>
+          <span class="feature-arrow">↗</span>
+        </a>
+      </div>
+
+      <div class="glass" style="padding:16px 22px;text-align:center;border-color:rgba(255,255,255,.05);">
+        <p style="font-size:.77rem;color:rgba(255,255,255,.25);">Brawl AI is a fan-made tool. Not affiliated with Supercell. Use it as guidance to develop your own playstyle and game sense.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+<script>initSidebar();</script>
+</body>
+</html>
